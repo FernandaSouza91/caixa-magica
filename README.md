@@ -1,17 +1,18 @@
 # 🧸 Caixa Mágica — MVP
 
-> Site de aluguel de brinquedos infantis. Desenvolvido como projeto prático do programa **Bolsa Futuro Digital – Capacita 04 · IFS Campus Aracaju · 2025**.
+> Plataforma de aluguel e venda de itens infantis. Projeto prático do programa **Bolsa Futuro Digital – Capacita 04 · IFS Campus Aracaju · 2025**.
 
 ---
 
 ## 📋 Sobre o projeto
 
-A **Caixa Mágica** é uma startup de economia compartilhada que oferece brinquedos e itens infantis para aluguel em Aracaju/SE. Hoje a operação depende de atendimento manual via WhatsApp e Instagram. Este projeto entrega o MVP do site oficial, centralizando:
+A **Caixa Mágica** e uma startup de economia compartilhada que oferece brinquedos e itens infantis em Aracaju/SE. O projeto entrega o MVP do site oficial, centralizando:
 
 - Catálogo público com busca e filtros por idade, categoria e período
-- Fluxo completo de reserva/pedido online
+- Fluxo de aluguel com pedido online
+- Fluxo separado de compra para produtos do tipo `sale`
 - Área do cliente com histórico de pedidos
-- Painel administrativo para gestão de produtos e pedidos
+- Painel administrativo para gestão de produtos, pedidos e usuários
 
 ---
 
@@ -24,7 +25,7 @@ A **Caixa Mágica** é uma startup de economia compartilhada que oferece brinque
 | Migrations | Alembic |
 | Banco de dados | PostgreSQL 15 |
 | Frontend | React 18 + Vite |
-| HTTP Client | Axios |
+| HTTP Client | Fetch API |
 | Containers | Docker + Docker Compose |
 | Autenticação | JWT (python-jose) |
 
@@ -55,11 +56,11 @@ docker-compose up --build
 docker-compose exec backend alembic upgrade head
 ```
 
-### URLs disponíveis
+### URLs Disponiveis
 
 | Serviço | URL |
 |---|---|
-| Frontend | http://localhost:5173 |
+| Frontend | http://localhost:3000 |
 | Backend API | http://localhost:8000 |
 | Documentação (Swagger) | http://localhost:8000/docs |
 | Documentação (ReDoc) | http://localhost:8000/redoc |
@@ -67,9 +68,9 @@ docker-compose exec backend alembic upgrade head
 
 ---
 
-## 🔧 Variáveis de ambiente
+## 🔧 Variaveis De Ambiente
 
-O arquivo `backend/.env.example` contém todas as variáveis necessárias. Copie para `backend/.env` e ajuste se necessário.
+O arquivo `backend/.env.example` contem as variaveis necessarias. Copie para `backend/.env` e ajuste se necessario.
 
 | Variável | Descrição | Valor padrão (dev) |
 |---|---|---|
@@ -78,13 +79,13 @@ O arquivo `backend/.env.example` contém todas as variáveis necessárias. Copie
 | `ALGORITHM` | Algoritmo do JWT | `HS256` |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Tempo de expiração do token | `60` |
 
-> ⚠️ **Nunca** suba o arquivo `.env` para o repositório. Ele já está no `.gitignore`.
+> ⚠️ **Nunca** suba o arquivo `.env` para o repositorio. Ele ja esta no `.gitignore`.
 
 ---
 
 ## 🏗️ Arquitetura
 
-O projeto usa **arquitetura domain-based**: cada domínio é uma pasta independente com seus próprios models, schemas, router e service. Isso permite que cada membro do time trabalhe no seu domínio sem conflito.
+O projeto usa **arquitetura domain-based**: cada dominio e uma pasta independente com seus proprios models, schemas, router e service.
 
 ```
 caixa-magica/
@@ -103,28 +104,28 @@ caixa-magica/
 │       ├── config.py          # variáveis de ambiente (pydantic-settings)
 │       ├── database.py        # engine async, SessionLocal, Base declarativa
 │       │
-│       ├── core/              # utilitários compartilhados por todos os domínios
+│       ├── core/              # utilitarios compartilhados por todos os dominios
 │       │   ├── security.py    # hash de senha, geração e validação de JWT
 │       │   ├── exceptions.py  # exceções HTTP customizadas
 │       │   └── responses.py   # formato padrão de response (success/error)
 │       │
-│       ├── catalog/           # Domínio 1 — produtos, categorias, imagens
+│       ├── catalog/           # Dominio 1 — produtos, categorias e imagens
 │       │   ├── models.py      # tabelas: products, categories, product_pricing, product_images
 │       │   ├── schemas.py     # Pydantic: ProductOut, CategoryOut, etc.
-│       │   ├── router.py      # rotas: GET /produtos, GET /produtos/:id, GET /categorias
-│       │   └── service.py     # lógica: listagem, filtros, busca
+│       │   ├── router.py      # rotas públicas e administrativas de catálogo
+│       │   └── service.py     # lógica: listagem, filtros, CRUD admin
 │       │
-│       ├── orders/            # Domínio 2 — pedidos, reservas, histórico
+│       ├── orders/            # Dominio 2 — pedidos, reservas e historico
 │       │   ├── models.py      # tabelas: orders, order_items, reservations, order_status_history
-│       │   ├── schemas.py     # Pydantic: OrderCreate, OrderOut, etc.
-│       │   ├── router.py      # rotas: POST /pedidos, GET /pedidos/:id, PATCH /pedidos/:id/status
-│       │   └── service.py     # lógica: reserva temporal, validação de capacidade, máquina de estados
+│       │   ├── schemas.py     # Pydantic: OrderCreate, SaleOrderCreate, OrderOut, etc.
+│       │   ├── router.py      # rotas de aluguel, compra e gestão de pedidos
+│       │   └── service.py     # lógica: reserva temporal, compra sale, status
 │       │
-│       └── users/             # Domínio 3 — usuários, endereços, auth, admin
+│       └── users/             # Dominio 3 — usuarios, enderecos, auth e admin
 │           ├── models.py      # tabelas: users, addresses, payments
 │           ├── schemas.py     # Pydantic: UserCreate, LoginRequest, TokenOut, etc.
-│           ├── router.py      # rotas: /auth/register, /auth/login, /usuarios/me
-│           └── service.py     # lógica: autenticação, perfil, painel admin
+│           ├── router.py      # rotas de auth, perfil e admin de usuários
+│           └── service.py     # lógica: autenticação, perfil e CRUD admin
 │
 └── frontend/
     ├── Dockerfile
@@ -132,20 +133,17 @@ caixa-magica/
     ├── vite.config.js
     └── src/
         ├── main.jsx
-        ├── App.jsx            # react-router-dom com todas as rotas
-        ├── services/
-        │   └── api.js         # instância do axios + funções de chamada à API
-        ├── pages/             # uma pasta por página
-        ├── components/        # componentes reutilizáveis
-        └── hooks/             # hooks customizados
+        ├── app/               # App, router, providers e guards
+        ├── features/          # módulos por domínio de frontend
+        └── shared/            # componentes, estilos, api e utils reutilizáveis
 ```
 
-### Responsabilidade de cada arquivo dentro de um domínio
+### Responsabilidade de cada arquivo dentro de um dominio
 
 | Arquivo | Responsabilidade |
 |---|---|
 | `models.py` | Define as tabelas com SQLAlchemy. Apenas estrutura, sem lógica. |
-| `schemas.py` | Define formatos de entrada e saída com Pydantic. Separa o que o banco armazena do que a API expõe. |
+| `schemas.py` | Define formatos de entrada e saida com Pydantic. Separa o que o banco armazena do que a API expoe. |
 | `router.py` | Define as rotas. Recebe request, chama o service, retorna response. Sem lógica de negócio. |
 | `service.py` | Onde a lógica vive. Valida regras, acessa o banco, toma decisões. |
 
@@ -153,7 +151,7 @@ caixa-magica/
 
 ## 🗃️ Modelo de dados
 
-O banco foi projetado para aluguel temporal de bens físicos. A principal decisão:
+O banco foi projetado com foco principal em aluguel temporal de bens fisicos, com extensao posterior para itens de venda. A principal decisao foi:
 
 > **Disponibilidade por contagem:** cada produto tem `total_units` (número de unidades físicas). Disponibilidade em um período = `total_units - COUNT(reservas ativas naquele intervalo)`.
 
@@ -165,11 +163,11 @@ O banco foi projetado para aluguel temporal de bens físicos. A principal decis�
 | `addresses` | Endereços dos usuários (múltiplos por usuário) |
 | `categories` | Categorias com suporte a hierarquia (parent_id) |
 | `product_categories` | Relação N:N entre produtos e categorias |
-| `products` | Catálogo de produtos (aluguel, venda, kit, vale-presente) |
+| `products` | Catalogo de produtos (aluguel, venda, kit, vale-presente) |
 | `product_pricing` | Preços por período (7, 15 ou 30 dias) |
 | `product_images` | Fotos dos produtos |
-| `orders` | Pedidos de aluguel |
-| `order_items` | Itens de cada pedido (produto + período + preço congelado) |
+| `orders` | Pedidos de aluguel e compra |
+| `order_items` | Itens de cada pedido, com suporte a aluguel e compra |
 | `reservations` | Controle de disponibilidade temporal |
 | `order_status_history` | Histórico imutável de mudanças de status |
 | `payments` | Registros de pagamento |
@@ -202,6 +200,13 @@ pendente → confirmado → em_uso → devolvido → finalizado
 | GET | `/api/v1/produtos` | Lista produtos com filtros |
 | GET | `/api/v1/produtos/{id}` | Detalhe de um produto |
 | GET | `/api/v1/produtos/categorias` | Lista categorias |
+| GET | `/api/v1/produtos/admin` | Lista produtos no admin |
+| GET | `/api/v1/produtos/admin/resumo` | Resumo de produtos no admin |
+| POST | `/api/v1/produtos/admin/categorias` | Cria categoria (admin) |
+| POST | `/api/v1/produtos/admin` | Cria produto (admin) |
+| PUT | `/api/v1/produtos/admin/{id}` | Atualiza produto (admin) |
+| PATCH | `/api/v1/produtos/admin/{id}/status` | Ativa/desativa produto (admin) |
+| DELETE | `/api/v1/produtos/admin/{id}` | Exclui logicamente produto (admin) |
 
 ### Usuários e Autenticação
 | Método | Rota | Descrição |
@@ -211,14 +216,22 @@ pendente → confirmado → em_uso → devolvido → finalizado
 | GET | `/api/v1/usuarios/me` | Perfil do usuário logado |
 | GET | `/api/v1/usuarios/me/pedidos` | Pedidos do usuário logado |
 | POST | `/api/v1/usuarios/me/enderecos` | Adicionar endereço |
+| GET | `/api/v1/usuarios/admin/usuarios` | Lista usuários no admin |
+| GET | `/api/v1/usuarios/admin/usuarios/resumo` | Resumo de usuários no admin |
+| GET | `/api/v1/usuarios/admin/usuarios/{id}` | Detalhe de usuário no admin |
+| POST | `/api/v1/usuarios/admin/usuarios` | Cria usuário no admin |
+| PUT | `/api/v1/usuarios/admin/usuarios/{id}` | Atualiza usuário no admin |
+| DELETE | `/api/v1/usuarios/admin/usuarios/{id}` | Exclui usuário no admin |
 
 ### Pedidos
 | Método | Rota | Descrição |
 |---|---|---|
-| POST | `/api/v1/pedidos` | Criar pedido |
+| POST | `/api/v1/pedidos` | Criar pedido de aluguel |
+| POST | `/api/v1/pedidos/compra` | Criar pedido de compra (`sale`) |
 | GET | `/api/v1/pedidos/{id}` | Detalhe do pedido |
 | PATCH | `/api/v1/pedidos/{id}/status` | Atualizar status (admin) |
 | GET | `/api/v1/pedidos/disponibilidade/{product_id}` | Verificar disponibilidade |
+| GET | `/api/v1/pedidos/admin/resumo` | Resumo de pedidos no admin |
 
 ### Formato padrão de response
 
